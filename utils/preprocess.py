@@ -5,7 +5,7 @@ import h5py
 
 def normalize_data( data ):
     """
-    Normalizes the given data with mean = 0 and standard deviation = 1
+    Normalizes the given data to have mean = 0 and standard deviation = 1
     
     Arguments:
     -----------
@@ -16,6 +16,10 @@ def normalize_data( data ):
     --------
     normalized   -  1D numpy array
                     raw data
+    mean         -  float
+                    mean of the raw data
+    std          -  float
+                    standard deviation of the raw data
              
     """
     assert len(data.shape)==1 or data.shape[1]==1
@@ -26,7 +30,7 @@ def normalize_data( data ):
     # Normalize the data
     normalized = (data - mean) / std
     
-    return normalized
+    return normalized, mean, std
 
 
 def gaussian(x, mu=0., sigma=1.):
@@ -117,6 +121,33 @@ def generate_TS_dataset( data, window_size=20, prediction_horizon=1 ):
     return np.array(inputs), np.array(targets)
 
 
+def shuffle_data( x, y ):
+    """
+    Randomly shuffles the dataset
+    
+    Arguments:
+    ----------
+    x                     -  nD numpy array
+                             size: n x window_size
+                             input TS with row-wise samples
+    y                     -  nD numpy array
+                             size: n x prediction_horizon
+                             target TS with row-wise samples
+    
+    Returns:
+    --------
+    x                     -  nD numpy array
+                             size: n x window_size
+                             input TS with row-wise samples
+    y                     -  nD numpy array
+                             size: n x prediction_horizon
+                             target TS with row-wise samples
+    """
+    n_data  = x.shape[0]
+    shuffle = np.random.permutation(n_data)
+    return x[ shuffle,:], y[ shuffle,:] 
+
+
 def split_data( x, y, split=0.20, shuffle=True ):
     """
     The dataset is shuffled and then split into subsets based on specified fraction with/without shuffling
@@ -159,7 +190,8 @@ def split_data( x, y, split=0.20, shuffle=True ):
     else:
         return x[:n_train,:], y[:n_train,:], x[n_train:,:], y[n_train:,:]
     
-def save_hdf5( save_path, x_train, y_train, x_valid, y_valid, x_test, y_test ):
+    
+def save_hdf5( save_path, x, y, true_mean, true_std ):
     """
     Saves the data subsets as a hdf5 file to the savepath
     
@@ -168,24 +200,18 @@ def save_hdf5( save_path, x_train, y_train, x_valid, y_valid, x_test, y_test ):
     save_path             -  str
                              path to save the hdf5 file to
                              e.g.: 'data/temperature-one-step.hdf5'
-    x_train               -  nD numpy array
-                             size: n_train x window_size
-                             training set - input TS with row-wise samples
-    y_train               -  nD numpy array
-                             size: n_train x prediction_horizon
-                             training set - target TS with row-wise samples
-    x_valid               -  nD numpy array
-                             size: n_valid x window_size
-                             test set - input TS with row-wise samples
-    y_valid               -  nD numpy array
-                             size: n_valid x prediction_horizon
-                             test set - target TS with row-wise samples
-    x_test                -  nD numpy array
-                             size: n_test x window_size
-                             test set - input TS with row-wise samples
-    y_test                -  nD numpy array
-                             size: n_test x prediction_horizon
-                             test set - target TS with row-wise samples    
+    x                     -  nD numpy array
+                             size: n x window_size
+                             input TS with row-wise samples
+    y                     -  nD numpy array
+                             size: n x prediction_horizon
+                             target TS with row-wise samples 
+    true_mean             -  float
+                             mean of the raw dataset before preprocessing
+                             helps in projection to true scale
+    true_std              -  float
+                             std of the raw dataset before preprocessing
+                             helps in projection to true scale
     Returns:
     --------
     
@@ -195,15 +221,50 @@ def save_hdf5( save_path, x_train, y_train, x_valid, y_valid, x_test, y_test ):
     except: pass
     # Create a hdf5 file
     h5file = h5py.File(save_path, 'w')
-    # Save the training set
-    h5file.create_dataset('train/x', data=x_train, dtype='float64')
-    h5file.create_dataset('train/y', data=y_train, dtype='float64')
-    # Save the validation set
-    h5file.create_dataset('valid/x', data=x_valid, dtype='float64')
-    h5file.create_dataset('valid/y', data=y_valid, dtype='float64')
-    # Save the test set
-    h5file.create_dataset('test/x',  data=x_test, dtype='float64')
-    h5file.create_dataset('test/y',  data=y_test, dtype='float64')
+    # Save the preprocessed dataset
+    h5file.create_dataset('x', data=x, dtype='float64')
+    h5file.create_dataset('y', data=y, dtype='float64')
+    # Save the true mean and std of raw dataset
+    h5file.create_dataset('true_mean', data=true_mean, dtype='float64')
+    h5file.create_dataset('true_std',  data=true_std , dtype='float64')
     # Close the hdf5 file
     h5file.close()
     print('Datasets have been saved as hdf5 file')
+    
+    
+def load_hdf5( file_path ):
+    """
+    Loads the data subsets from the saved hdf5 file
+    
+    Arguments:
+    ----------
+    file_path             -  str
+                             path to save the hdf5 file to
+                             e.g.: 'data/temperature-one-step.hdf5'
+                             
+    Returns:
+    --------
+    x                     -  nD numpy array
+                             size: n x window_size
+                             input TS with row-wise samples
+    y                     -  nD numpy array
+                             size: n x prediction_horizon
+                             target TS with row-wise samples 
+    true_mean             -  float
+                             mean of the raw dataset before preprocessing
+                             helps in projection to true scale
+    true_std              -  float
+                             std of the raw dataset before preprocessing
+                             helps in projection to true scale
+    """
+    # Load the hdf5 file
+    data           = h5py.File(file_path,'r')
+    # Extract the datasets
+    x              = data['x'][...]
+    y              = data['y'][...]
+    true_mean      = data['true_mean'][...]
+    true_std       = data['true_std'][...]
+    # Close the hdf5 file
+    data.close()
+    
+    return x, y, true_mean, true_std
