@@ -75,21 +75,21 @@ Results from the paper are obtained from Table 1 (Page 4).
 
 Table 1. One-step prediction on Temperature Dataset
 
-| Model Name         |   MSE (x 10^2)     |   MAE (x 10)        | 
-| :-----------------:|:------------------:|:-------------------:|
-| Simple LSTM (paper)|1.362 +/- 0.126     |0.9197 +/- 0.0400    |  
-| ACRNN (paper)      |**1.317 +/- 0.083** |**0.9019 +/- 0.0290**|  
-| Simple LSTM (mine) |1.654 +/- 0.0613    |1.0118 +/- 0.0182    | 
-| ACRNN (mine)       |1.539 +/- 0.021     |0.9762 +/- 0.0076    |   
+| Model Name         | MSE (x 10<sup>2</sup>) |   MAE (x 10)        | 
+| :-----------------:|:----------------------:|:-------------------:|
+| Simple LSTM (paper)|1.362 +/- 0.126         |0.9197 +/- 0.0400    |  
+| ACRNN (paper)      |**1.317 +/- 0.083**     |**0.9019 +/- 0.0290**|  
+| Simple LSTM (mine) |1.654 +/- 0.0613        |1.0118 +/- 0.0182    | 
+| ACRNN (mine)       |1.539 +/- 0.021         |0.9762 +/- 0.0076    |   
 
 Table 2. One-step prediction on Sunspot Dataset
 
-| Model Name         |   MSE (x 10^2)     |  MAE (x 10)         |
-| :-----------------:|:------------------:|:-------------------:|
-| Simple LSTM (paper)|0.564 +/- 0.024     |0.5425 +/- 0.1076    |  
-| ACRNN (paper)      |0.501 +/- 0.126     |0.5194 +/- 0.0653    |  
-| Simple LSTM (mine) |0.546 +/- 0.036     |0.5419 +/- 0.0169    | 
-| ACRNN (mine)       |**0.499 +/- 0.052** |**0.5089 +/- 0.0242**|
+| Model Name         | MSE (x 10<sup>2</sup>) |  MAE (x 10)         |
+| :-----------------:|:----------------------:|:-------------------:|
+| Simple LSTM (paper)|0.564 +/- 0.024         |0.5425 +/- 0.1076    |  
+| ACRNN (paper)      |0.501 +/- 0.126         |0.5194 +/- 0.0653    |  
+| Simple LSTM (mine) |0.546 +/- 0.036         |0.5419 +/- 0.0169    | 
+| ACRNN (mine)       |**0.499 +/- 0.052**     |**0.5089 +/- 0.0242**|
 
 For both datasets, the ACRNN model outperforms the LSTM model. The paper's ACRNN outperforms mine for the Temperature Dataset, whereas it slightly underperforms my implementation for the Sunspot dataset. My implementation of ACRNN performs worse than the simple LSTM from the paper for the Temperature dataset. Without knowledge of the exact architecture used in the paper, a true comparison cannot be made.
 
