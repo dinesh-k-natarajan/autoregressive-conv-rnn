@@ -2,6 +2,7 @@
 
 Implementation of the 2019 [paper](https://arxiv.org/abs/1903.02540) 'Autoregressive Convolutional Recurrent Neural Network for Univariate and Multivariate Time Series Prediction' by Matteo Maggiolo and Gerasimos Spanakis.
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/dinesh-k-natarajan/autoregressive-conv-rnn)
 
 ## 1. Datasets 
 Univariate datasets for time-series (TS) forecasting:  
