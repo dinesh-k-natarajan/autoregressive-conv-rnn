@@ -26,6 +26,8 @@ The input TS of length = 20 and the target TS of length = {1,3,5,7} form the dat
 
 Implementation can be found in: [`preprocessing_temperature.ipynb`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/preprocessing_temperature.ipynb), [`preprocessing_sunspot.ipynb`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/preprocessing_sunspot.ipynb), [`utils/preprocess.py`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/utils/preprocess.py)
 
+The preprocessed and windowed datasets for TS prediction can be found in the `data/` directory in the form of `.hdf5` files.
+
 ## 2. Models
 
 ### 2.1. Simple LSTM
@@ -83,16 +85,16 @@ Table 2. One-step prediction on Sunspot Dataset
 
 ### 2.2.  Multi-step prediction
 
-Comparison of DTW loss values for 3-, 5- and 7-step TS predictions of the two models.
+Comparison of Dynamic Time Warping (DTW) loss values for 3-, 5- and 7-step TS predictions of the two models.
 
 The DTW computation was implemented using [dtaidistance](https://dtaidistance.readthedocs.io/en/latest/) Python package. 
-Some clarity is needed regarding the correct computation of DTW loss:  
-  * Is DTW loss computed between the entire target TS and predicted TS for the test set (shape = n_data x n_output)?
-  * Is DTW loss computed between each sample of the target TS and predicted TS for the test set and then divided by n_samples?
+Some clarity is needed regarding the correct computation of DTW loss:    
+  * Is DTW loss computed between the entire target TS and predicted TS for the test set (shape = n_data x n_output)?  
+  * Is DTW loss computed between each sample of the target TS and predicted TS for the test set and then divided by n_samples?  
   
 The current implementation follows the latter method leading to very low DTW values in comparison to the values reported in the paper. A correct DTW computation is required here.
 
-Table 3. Multi-step prediction on Temperature Dataset
+Table 3. DTW Loss for Multi-step prediction on Temperature Dataset
 
 | Model Name         |   3-step            |   5-step          |   7-step          | 
 |:------------------:|:-------------------:|:-----------------:|:-----------------:|
@@ -101,7 +103,7 @@ Table 3. Multi-step prediction on Temperature Dataset
 | Simple LSTM (mine) |0.3870 +/- 0.0041    |0.6661 +/- 0.0366  |0.7999 +/- 0.0557  |
 | ACRNN (mine)       |0.3917 +/- 0.0112    |0.6691 +/- 0.0189  |0.8817 +/- 0.0310  |   
 
-Table 4. Multi-step prediction on Sunspot Dataset
+Table 4. DTW Loss for Multi-step prediction on Sunspot Dataset
 
 | Model Name         |   3-step            |   5-step          |   7-step          | 
 | :-----------------:|:-------------------:|:-----------------:|:-----------------:|
@@ -109,4 +111,6 @@ Table 4. Multi-step prediction on Sunspot Dataset
 | ACRNN (paper)      |0.359 +/- 0.095      |0.859 +/- 0.256    |1.331 +/- 0.362    |  
 | Simple LSTM (mine) |0.1971 +/- 0.0154    |0.3216 +/- 0.0093  |0.4151 +/- 0.0114  |
 | ACRNN (mine)       |0.1910 +/- 0.0044    |0.3270 +/- 0.0111  |0.4261 +/- 0.0049  | 
+
+The results from the above tables can be found in the jupyter notebooks: `3-step_XXXX.ipynb`, `5-step_XXXX.ipynb` and `7-step_XXXX.ipynb`
  
