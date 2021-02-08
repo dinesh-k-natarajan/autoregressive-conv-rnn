@@ -139,35 +139,21 @@ def compute_dtw( true, pred ):
     dtw_score             -   float
                               distance measure computed from DTW
     """
-    #dtw, _ = fastdtw( true, pred, dist=euclidean )
-    dtw_score = 0
-    for sample in range( pred.shape[0]):
-        dtw_score += dtw.distance( true[sample,:], pred[sample,:] )
+    # 1. FastDTW
+    dtw_score    = 0
+    for sample in range( true.shape[0] ):
+        dtw_sample, _ = fastdtw( true[sample,:], pred[sample,:], dist=euclidean )
+        dtw_score += dtw_sample
+    dtw_score    = dtw_score / true.shape[0]
+    
+    ## 2. Independent DTW for multi-dimensional TS of shape = (n_samples, n_timesteps)
+    ## Ref: https://dtaidistance.readthedocs.io/en/latest/usage/dtw.html#multi-dimensionsal-dtw
+    #dtw_score = 0
+    #for sample in range( pred.shape[0]):
+    #    dtw_score += dtw.distance( true[sample,:], pred[sample,:] )
+       
     return dtw_score
     
-def unscale_data( data, true_mean, true_std ):
-    """
-    Projects the data back to the true scale
-    
-    Arguments:
-    ----------
-    data                  -   int, float or nD array
-                              preprocessed standardized data 
-    true_mean             -   float
-                              mean of the raw dataset before preprocessing
-                              helps in projection to true scale
-    true_std              -   float
-                              std of the raw dataset before preprocessing
-                              helps in projection to true scale
-                              
-    Returns:
-    --------
-    true_data             -   int, float or nD array
-                              data in the true scale
-    """
-    true_data = ( data * true_std ) + true_mean    
-    return true_data
-
     
 def train_model(model, x_train, y_train, fold=None, epochs=100, batch_size=32, stopping_patience=50, dataset=None):
     """
@@ -234,6 +220,7 @@ def train_model(model, x_train, y_train, fold=None, epochs=100, batch_size=32, s
     model.load_weights( checkpoint_path )
     # Save the best model itself
     model_path  = save_path + 'model.h5'
+    model.save(model_path)
 
     # Saving the training log as csv file
     log_path    = save_path + 'training_log.csv'

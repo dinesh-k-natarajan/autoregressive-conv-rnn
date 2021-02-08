@@ -42,6 +42,14 @@ Implementation can be found in: [`utils/models.py`](https://github.com/dinesh-k-
 The paper describes the general structure of the proposed model but not the specific architecture used to report the results.
 Based on the Section 2 of the paper and improving on [this](https://github.com/KurochkinAlexey/ConvRNN) unofficial Pytorch implementation of CRNN, the proposed model has been implemented here using Tensorflow `2.4.1`.
 
+The ACRNN model consists of three distinct parts:  
+  * 3 1D (Causal) Convolutions on input TS, 1/2 downsampled TS, 1/4 downsampled TS  
+  * 3 GRU layers for the outputs of the Conv1D layers  
+  * Linear transformation of: (a) the outputs of the GRU layers and (b) the input TS  
+
+The Conv1D and GRU layers represent non-linear transformation of the input TS. The output of the ACRNN model is the sum of the
+non-linear part (linear transform of the concatenation of last hidden states from the 3 GRU layers) and the direct linear transformation of the flattened input TS of shape=(n_samples,n_timesteps x n_features)
+
 Implementation can be found in: [`utils/models.py`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/utils/models.py)
 
 ## 3. Experiments
@@ -61,57 +69,88 @@ For the multi-step time series prediction, the metric used is:
 Helper functions for model training and evaluation can be found in: [`utils/model_functions.py`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/utils/model_functions.py)
 Results and training history of the models can be found in the notebooks: [`1-step_predictions_temperature.ipynb`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/1-step_predictions_temperature.ipynb) and [`1-step_predictions_sunspot.ipynb`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/1-step_predictions_sunspot.ipynb)
 
-### 2.1.  One-step prediction
+### 3.1.  One-step prediction
 
 Results from the paper are obtained from Table 1 (Page 4).
 
 Table 1. One-step prediction on Temperature Dataset
 
-| Model Name         |   MSE (x 10^2)      |   MAE (x 10)      | 
-| :-----------------:|:-------------------:|:-----------------:|
-| Simple LSTM (paper)|1.362 +/- 0.126      |0.9197 +/- 0.0400  |  
-| ACRNN (paper)      |1.317 +/- 0.083      |0.9019 +/- 0.0290  |  
-| Simple LSTM (mine) |1.651 +/- 0.135      |1.0181 +/- 0.0401  | 
-| ACRNN (mine)       |1.564 +/- 0.076      |0.9909 +/- 0.0309  |   
+| Model Name         |   MSE (x 10^2)     |   MAE (x 10)        | 
+| :-----------------:|:------------------:|:-------------------:|
+| Simple LSTM (paper)|1.362 +/- 0.126     |0.9197 +/- 0.0400    |  
+| ACRNN (paper)      |**1.317 +/- 0.083** |**0.9019 +/- 0.0290**|  
+| Simple LSTM (mine) |1.654 +/- 0.0613    |1.0118 +/- 0.0182    | 
+| ACRNN (mine)       |1.539 +/- 0.021     |0.9762 +/- 0.0076    |   
 
 Table 2. One-step prediction on Sunspot Dataset
 
-| Model Name         |   MSE (x 10^2)      |  MAE (x 10)       |
-| :-----------------:|:-------------------:|:-----------------:|
-| Simple LSTM (paper)|0.564 +/- 0.024      |0.5425 +/- 0.1076  |  
-| ACRNN (paper)      |0.501 +/- 0.126      |0.5194 +/- 0.0653  |  
-| Simple LSTM (mine) |0.542 +/- 0.024      |0.5480 +/- 0.0171  | 
-| ACRNN (mine)       |0.478 +/- 0.070      |0.5029 +/- 0.0329  |
+| Model Name         |   MSE (x 10^2)     |  MAE (x 10)         |
+| :-----------------:|:------------------:|:-------------------:|
+| Simple LSTM (paper)|0.564 +/- 0.024     |0.5425 +/- 0.1076    |  
+| ACRNN (paper)      |0.501 +/- 0.126     |0.5194 +/- 0.0653    |  
+| Simple LSTM (mine) |0.546 +/- 0.036     |0.5419 +/- 0.0169    | 
+| ACRNN (mine)       |**0.499 +/- 0.052** |**0.5089 +/- 0.0242**|
 
+For both datasets, the ACRNN model outperforms the LSTM model. The paper's ACRNN outperforms mine for the Temperature Dataset, whereas it slightly underperforms my implementation for the Sunspot dataset. My implementation of ACRNN performs worse than the simple LSTM from the paper for the Temperature dataset. Without knowledge of the exact architecture used in the paper, a true comparison cannot be made.
 
-### 2.2.  Multi-step prediction
+The results from the above tables can be found in: `1-step_prediction_temperature.ipynb` and `1-step_prediction_sunspot.ipynb`
+
+### 3.2.  Multi-step prediction
 
 Comparison of Dynamic Time Warping (DTW) loss values for 3-, 5- and 7-step TS predictions of the two models.
 
-The DTW computation was implemented using [dtaidistance](https://dtaidistance.readthedocs.io/en/latest/) Python package. 
-Some clarity is needed regarding the correct computation of DTW loss:    
-  * Is DTW loss computed between the entire target TS and predicted TS for the test set (shape = n_data x n_output)?  
-  * Is DTW loss computed between each sample of the target TS and predicted TS for the test set and then divided by n_samples?  
-  
-The current implementation follows the latter method leading to very low DTW values in comparison to the values reported in the paper. A correct DTW computation is required here.
+Dynamic Time Warping allows the two TS to be out of phase with each other and still share common characteristics. Such scenarios are observed in Speech Recognition where Euclidean Distance between two TS could be rather strict.
 
+More about DTW: [DTW for Speech Data](https://databricks.com/blog/2019/04/30/understanding-dynamic-time-warping.html), [DTW Explained](https://medium.com/walmartglobaltech/time-series-similarity-using-dynamic-time-warping-explained-9d09119e48ec), [Fast DTW paper](https://cs.fit.edu/~pkc/papers/tdm04.pdf)
+
+The DTW computation was implemented using [fastdtw](https://pypi.org/project/fastdtw/) Python package. The DTW loss is computed between each target TS and predicted TS and averaged over the test set.
+
+The results from the paper are taken from Table 3 (Page 5).
+ 
 Table 3. DTW Loss for Multi-step prediction on Temperature Dataset
 
-| Model Name         |   3-step            |   5-step          |   7-step          | 
-|:------------------:|:-------------------:|:-----------------:|:-----------------:|
-| Simple LSTM (paper)|0.592 +/- 0.033      |1.475 +/- 0.143    |2.679 +/- 0.303    |  
-| ACRNN (paper)      |0.679 +/- 0.038      |1.672 +/- 0.133    |2.598 +/- 0.118    |  
-| Simple LSTM (mine) |0.3870 +/- 0.0041    |0.6661 +/- 0.0366  |0.7999 +/- 0.0557  |
-| ACRNN (mine)       |0.3917 +/- 0.0112    |0.6691 +/- 0.0189  |0.8817 +/- 0.0310  |   
+| Model Name         |   3-step            |   5-step            |   7-step            | 
+|:------------------:|:-------------------:|:-------------------:|:-------------------:|
+| Simple LSTM (paper)|**0.592  +/- 0.033** |1.475  +/- 0.143     |2.679  +/- 0.303     |  
+| ACRNN (paper)      |0.679  +/- 0.038     |1.672  +/- 0.133     |2.598  +/- 0.118     |  
+| Simple LSTM (mine) |0.6118 +/- 0.0168    |1.3322 +/- 0.0355    |**1.7903 +/- 0.0978**|
+| ACRNN (mine)       |0.6088 +/- 0.0131    |**1.3214 +/- 0.0295**|2.0374 +/- 0.0685    |   
 
 Table 4. DTW Loss for Multi-step prediction on Sunspot Dataset
 
-| Model Name         |   3-step            |   5-step          |   7-step          | 
-| :-----------------:|:-------------------:|:-----------------:|:-----------------:|
-| Simple LSTM (paper)|0.317 +/- 0.059      |0.720 +/- 0.111    |1.187 +/- 0.217    |  
-| ACRNN (paper)      |0.359 +/- 0.095      |0.859 +/- 0.256    |1.331 +/- 0.362    |  
-| Simple LSTM (mine) |0.1971 +/- 0.0154    |0.3216 +/- 0.0093  |0.4151 +/- 0.0114  |
-| ACRNN (mine)       |0.1910 +/- 0.0044    |0.3270 +/- 0.0111  |0.4261 +/- 0.0049  | 
+| Model Name         |   3-step            |   5-step            |   7-step            | 
+| :-----------------:|:-------------------:|:-------------------:|:-------------------:|
+| Simple LSTM (paper)|0.317  +/- 0.059     |0.720  +/- 0.111     |1.187  +/- 0.217     |  
+| ACRNN (paper)      |0.359  +/- 0.095     |0.859  +/- 0.256     |1.331  +/- 0.362     |  
+| Simple LSTM (mine) |0.3046 +/- 0.0150    |0.6621 +/- 0.0206    |**0.9824 +/- 0.0447**|
+| ACRNN (mine)       |**0.2975 +/- 0.0133**|**0.6491 +/- 0.0428**|0.9928 +/- 0.0125    | 
+
+Generally, my implementation outperforms the models in the paper. One exception is the 3-step temperature prediction in which their LSTM performs the best, although only a small improvement over my ACRNN and LSTM. The reason for better performance could arise from any differences in computation of DTW loss. The authors refer to [FastDTW](https://cs.fit.edu/~pkc/papers/tdm04.pdf) for their implementation, and the [fastdtw](https://pypi.org/project/fastdtw/) package is also based on the same paper. Without further knowledge about the apt DTW implementation, a strong conclusion cannot be made about the performance of the models.
 
 The results from the above tables can be found in the jupyter notebooks: `3-step_XXXX.ipynb`, `5-step_XXXX.ipynb` and `7-step_XXXX.ipynb`
- 
+
+## 4. Visualizations of predictions
+
+Predictions from both models for a random sample of each of the datasets are shown below.
+
+### 4.1. Temperature Dataset
+
+![1-step temperature prediction](figures/1-step_temperature.png)
+![3-step temperature prediction](figures/3-step_temperature.png)
+![5-step temperature prediction](figures/5-step_temperature.png)
+![7-step temperature prediction](figures/7-step_temperature.png)
+
+
+### 4.2. Sunspot Dataset
+
+![1-step sunspot prediction](figures/1-step_sunspot.png)
+![3-step sunspot prediction](figures/3-step_sunspot.png)
+![5-step sunspot prediction](figures/5-step_sunspot.png)
+![7-step sunspot prediction](figures/7-step_sunspot.png)
+
+
+## 5. Further Work
+  * Extensive Hyperparameter Tuning of the models for a true comparison
+  * Choosing the correct implementation of DTW computation
+  * Ablation study of the ACRNN model to understand the influence of each component
+  * Extension to the multivariate datasets mentioned in the paper

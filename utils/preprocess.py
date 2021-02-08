@@ -33,6 +33,30 @@ def standardize_data( data ):
     return standardized, mean, std
 
 
+def unscale_data( data, true_mean, true_std ):
+    """
+    Projects the data back to the true scale
+    
+    Arguments:
+    ----------
+    data                  -   int, float or nD array
+                              preprocessed standardized data 
+    true_mean             -   float
+                              mean of the raw dataset before preprocessing
+                              helps in projection to true scale
+    true_std              -   float
+                              std of the raw dataset before preprocessing
+                              helps in projection to true scale
+                              
+    Returns:
+    --------
+    true_data             -   int, float or nD array
+                              data in the true scale
+    """
+    true_data = ( data * true_std ) + true_mean    
+    return true_data
+
+
 def normalize_data( data, scale_range=[-1,1]):
     """
     Normalizes the given data between the given range [0,1] or [-1,1]
