@@ -7,6 +7,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FormatStrFormatter
 from sklearn.model_selection import KFold
+from dtaidistance import dtw
 from fastdtw import fastdtw
 from scipy.spatial.distance import euclidean
 
@@ -94,20 +95,20 @@ def kfold_cv( k, x, y, true_mean, true_std, model_func, model_args, compile_kwar
         mse_folds.append( scores[0] )
         mae_folds.append( scores[1] )
         # Print metrics
-        print('MSE on test set for fold {} = {:.4f}'.format(fold, scores[0]) )
-        print('MAE on test set for fold {} = {:.4f}'.format(fold, scores[1]) )
+        print('MSE on test set for fold {} = {:.6f}'.format(fold, scores[0]) )
+        print('MAE on test set for fold {} = {:.6f}'.format(fold, scores[1]) )
         # Compute Dynamic Time Warping in the case of multi-step TS prediction
         if y.shape[1] > 1:
             y_pred = model.predict( x_test )
-            dtw    = compute_dtw( y_test, y_pred )
-            dtw_folds.append( dtw )
-            print('DTW on test set for fold {} = {:.4f}'.format(fold, dtw) )     
+            dtw_score = compute_dtw( y_test, y_pred )
+            dtw_folds.append( dtw_score )
+            print('DTW on test set for fold {} = {:.4f}'.format(fold, dtw_score ) )     
         # Move onto the next fold
         fold += 1
         print(110*'=')
     print('Final results after k-fold cross validation:')
-    print('MSE = {:.4f} +/- {:.4f}'.format( np.mean(mse_folds), np.std(mse_folds) ) )
-    print('MAE = {:.4f} +/- {:.4f}'.format( np.mean(mae_folds), np.std(mae_folds) ) )
+    print('MSE = {:.6f} +/- {:.6f}'.format( np.mean(mse_folds), np.std(mse_folds) ) )
+    print('MAE = {:.6f} +/- {:.6f}'.format( np.mean(mae_folds), np.std(mae_folds) ) )
     if y.shape[1] > 1:
         print('DTW = {:.4f} +/- {:.4f}'.format( np.mean(dtw_folds), np.std(dtw_folds) ) )
         
@@ -135,11 +136,14 @@ def compute_dtw( true, pred ):
     
     Returns:
     --------
-    dtw                   -   float
+    dtw_score             -   float
                               distance measure computed from DTW
     """
-    dtw, _ = fastdtw( true, pred, dist=euclidean )
-    return dtw
+    #dtw, _ = fastdtw( true, pred, dist=euclidean )
+    dtw_score = 0
+    for sample in range( pred.shape[0]):
+        dtw_score += dtw.distance( true[sample,:], pred[sample,:] )
+    return dtw_score
     
 def unscale_data( data, true_mean, true_std ):
     """

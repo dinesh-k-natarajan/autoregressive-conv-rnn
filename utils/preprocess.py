@@ -3,9 +3,9 @@ from math import pi, sqrt, exp, ceil
 from scipy.signal import fftconvolve
 import h5py
 
-def normalize_data( data ):
+def standardize_data( data ):
     """
-    Normalizes the given data to have mean = 0 and standard deviation = 1
+    Standardizes the given data to have mean = 0 and standard deviation = 1
     
     Arguments:
     -----------
@@ -14,8 +14,8 @@ def normalize_data( data ):
     
     Returns:
     --------
-    normalized   -  1D numpy array
-                    raw data
+    standardized -  1D numpy array
+                    standardized data
     mean         -  float
                     mean of the raw data
     std          -  float
@@ -27,10 +27,35 @@ def normalize_data( data ):
     # Find mean and standard deviation of raw data
     mean = np.mean( data )
     std  = np.std( data )    
-    # Normalize the data
-    normalized = (data - mean) / std
+    # Standardize the data
+    standardized = (data - mean) / std
     
-    return normalized, mean, std
+    return standardized, mean, std
+
+
+def normalize_data( data, scale_range=[-1,1]):
+    """
+    Normalizes the given data between the given range [0,1] or [-1,1]
+    
+    Arguments:
+    -----------
+    data         -  1D numpy array
+                    raw data
+    
+    Returns:
+    --------
+    normalized   -  1D numpy array
+                    normalized data
+    """
+    assert len(data.shape)==1 or data.shape[1]==1
+    data = data.squeeze()
+    # Find min and max of the data
+    min_data = np.min( data )
+    max_data = np.max( data )
+    # Normalize the data
+    normalized = scale_range[0]+((data-min_data)*(scale_range[1]-scale_range[0]))/(max_data-min_data)
+    
+    return normalized
 
 
 def gaussian(x, mu=0., sigma=1.):
