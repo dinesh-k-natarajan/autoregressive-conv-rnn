@@ -50,12 +50,23 @@ The ACRNN model consists of three distinct parts:
 The Conv1D and GRU layers represent non-linear transformation of the input TS. The output of the ACRNN model is the sum of the
 non-linear part (linear transform of the concatenation of last hidden states from the 3 GRU layers) and the direct linear transformation of the flattened input TS of shape=(n_samples,n_timesteps x n_features)
 
+**Doubts regarding linear regression on input TS:**  
+In Section 2 of the paper, the authors say: 'we reduce the regression input window to 5 previous steps in all cases' w.r.t to the linear transformation for the inputs. There is some ambiguity about what is implied: (a) whether the input `window_size` is reduced to 5 (which contradicts the requirement that `window_size` should be divisible by 4 or (b) whether the linear transformation is only applied on the last 5 previous steps of the input. Further clarification is needed and accordingly the implementation needs to be changed. In my implementation, linear transformation is performed on the entire input TS of length `window_size`. A slightly better performance can be expected from doing regression over the entire input TS as opposed to only 5 previous steps.
+
 Implementation can be found in: [`utils/models.py`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/blob/main/utils/models.py)
 
 ## 3. Experiments
 
 TWo models were trained and evaluated for one-step and multi-step predictions for the two univariate datasets.
-The models were compared using metrics evaluated by k-fold cross validation with k=5. 
+The models were compared using metrics evaluated by k-fold cross validation with `k=5`, where the data set is split into k subsets and the model is trained on (k-1) training subsets while being evaluated on the remaining 1 test subset. During training, the training subsets are further split into a validation set with `split=0.2`. 
+
+**Training details:**  
+  * Epochs = `100`  
+  * Loss function = `MSE( y_true, y_pred )`  
+  * Optimizer = `Adam`  
+  * Initial Learning Rate = `0.001`  
+  * Early Stopping with `patience = 50` epochs while monitoring validation loss  
+  * Evaluation metrics = Mean Absolute Error (`MAE`), Dynamic Time Warping (`DTW` - for multi-step predictions)  
 
 The results of the training are saved in the [`trained_models/`](https://github.com/dinesh-k-natarajan/autoregressive-conv-rnn/tree/main/trained_models) directory. This includes the model weights from the best epoch w.r.t minimum validation loss, keras model with the said optimum weights and an evolution plot of the losses during training. These three results are saved for each fold of the k-fold evaluation of the models for each dataset.
 
